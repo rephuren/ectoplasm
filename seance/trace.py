@@ -54,6 +54,26 @@ def _host(url: str) -> str:
         return ""
 
 
+@dataclass
+class Hidden:
+    """Невидимый текст в чём угодно, что агент прочитал: правила, файлы, страницы. Свой он или чужой, глазами его не видно."""
+    event_idx: int
+    source_label: str
+    decoded: str
+    evidence: str
+
+
+def hidden_text(session: Session) -> list[Hidden]:
+    out = []
+    for ev in session.events:
+        if ev.kind not in ("context", "result"):
+            continue
+        for hit in injection.find(ev.text):
+            if hit.label == "невидимые символы":
+                out.append(Hidden(ev.idx, ev.label(), mask(hit.decoded)[:300], snippet(ev.text, hit.start, hit.start)))
+    return out
+
+
 def _tokens(text: str) -> list[str]:
     found = {u.rstrip(".,;:'\"") for u in URL_RE.findall(text)}
     for u in list(found):

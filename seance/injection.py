@@ -7,7 +7,7 @@ PATTERNS = [
     ("игнорировать прежние указания", re.compile(r"(?i)(игнорируй|забудь|отмени)[^.\n]{0,40}(предыдущ|прежн|выше|систем)[^.\n]{0,30}(инструкц|указани|правил|промпт)")),
     ("скрыть от пользователя", re.compile(r"(?i)\b(do not|don't|never)\b[^.\n]{0,25}\b(tell|inform|mention|show|reveal)\b[^.\n]{0,25}\b(the )?user\b")),
     ("скрыть от пользователя", re.compile(r"(?i)(не\s+(говори|сообщай|показывай|упоминай))[^.\n]{0,30}пользовател")),
-    ("обращение к модели", re.compile(r"(?i)(<\s*important\s*>|\[\s*system\s*\]|\bas an? (ai|assistant|llm)\b|\bnote to (the )?(ai|assistant|agent)\b|\bwhen you (read|see) this\b)")),
+    ("обращение к модели", re.compile(r"(?i)(<\s*important\s*>|\binstructions? (for|to) (the )?(cursor|claude|copilot|chatgpt|gemini|ai|assistant|agent|llm|model)\b|\[\s*system\s*\]|\bas an? (ai|assistant|llm)\b|\bnote to (the )?(ai|assistant|agent)\b|\bwhen you (read|see) this\b)")),
     ("приказ выполнить", re.compile(r"(?i)\b(you must|you should now|now you (must|should|will)|first,? (run|execute|call|send|read))\b[^.\n]{0,60}\b(run|execute|call|send|read|fetch|curl|upload|post|write|append|install)\b")),
     ("приказ выполнить", re.compile(r"(?i)(ты должен|теперь (ты )?(выполни|запусти|отправь|прочитай))")),
     ("загрузка и запуск", re.compile(r"(?i)\b(curl|wget)\b[^\n|]{0,200}\|\s*(sudo\s+)?(ba|z)?sh\b")),

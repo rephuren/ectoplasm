@@ -8,7 +8,7 @@ CONF = {"strong": "сильная", "medium": "средняя", "weak": "сла�
 RED, DIM, BOLD, RESET = "\033[38;2;179;0;15m", "\033[2m", "\033[1m", "\033[0m"
 
 
-def text(session, incidents, color: bool, total_sinks: int | None = None) -> str:
+def text(session, incidents, color: bool, hidden=()) -> str:
     def c(code, s):
         return f"{code}{s}{RESET}" if color and code else s
 
@@ -28,14 +28,19 @@ def text(session, incidents, color: bool, total_sinks: int | None = None) -> str
             out.append(f"     ↳ {link.source_label}: {link.note}")
             if link.evidence:
                 out.append(c(DIM, f"       «{link.evidence}»"))
+    for h in hidden:
+        out.append("")
+        out.append(f"{c(RED, '▓')} {c(RED + BOLD, 'скрытый текст')} {h.source_label}  {c(DIM, 'невидимые символы Unicode, которые модель читает, а глаза нет')}")
+        out.append(f"     расшифровка: «{h.decoded or 'не ASCII, но символы скрытые'}»")
     n_strong = sum(1 for i in incidents if i.confidence == "strong")
     out += ["", c(DIM, f"находок: {len(incidents)}, сильных: {n_strong}.  Связь означает происхождение данных и признаки инструкции, но не доказывает причину.")]
     return "\n".join(out) + "\n"
 
 
-def as_json(session, incidents) -> str:
+def as_json(session, incidents, hidden=()) -> str:
     return json.dumps({
         "session": session.path, "events": len(session.events), "skipped_lines": session.skipped_lines,
+        "hidden_text": [{"event": h.event_idx, "source": h.source_label, "decoded": h.decoded} for h in hidden],
         "incidents": [{
             "event": i.sink_idx, "tool": i.sink_label, "severity": i.severity, "confidence": i.confidence, "user_driven": i.user_driven,
             "sinks": [{"code": s.code, "severity": s.severity, "title": s.title, "detail": mask(s.detail)[:500]} for s in i.sinks],
