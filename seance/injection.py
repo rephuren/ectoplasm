@@ -17,6 +17,9 @@ HIDDEN_CHARS = "\U000e0000-\U000e007f\u2060-\u2064\u202a-\u202e\u2066-\u2069"
 INVISIBLE_RUN = re.compile("[" + HIDDEN_CHARS + "]{8,}")  # короткие последовательности бывают в флагах-эмодзи, скрытый текст длиннее
 
 
+WEAK_LABELS = {"приказ выполнить"}  # встречается в обычных инструкциях («сначала выполните npm install»): сама по себе не повод
+
+
 @dataclass
 class Hit:
     label: str
@@ -32,3 +35,10 @@ def find(text: str) -> list[Hit]:
         hits.append(Hit("невидимые символы", m.start(), m.end(), decoded))
     hits.sort(key=lambda h: h.start)
     return hits
+
+
+def convincing(hits: list[Hit]) -> list[Hit]:
+    """Находки, на которые можно опираться: есть сильный признак или сошлись минимум два разных."""
+    if any(h.label not in WEAK_LABELS for h in hits) or len({h.label for h in hits}) >= 2:
+        return hits
+    return []
