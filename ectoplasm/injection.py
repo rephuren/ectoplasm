@@ -11,13 +11,16 @@ PATTERNS = [
     ("приказ выполнить", re.compile(r"(?i)\b(you must|you should now|now you (must|should|will)|first,? (run|execute|call|send|read))\b[^.\n]{0,60}\b(run|execute|call|send|read|fetch|curl|upload|post|write|append|install)\b")),
     ("приказ выполнить", re.compile(r"(?i)(ты должен|теперь (ты )?(выполни|запусти|отправь|прочитай))")),
     ("загрузка и запуск", re.compile(r"(?i)\b(curl|wget)\b[^\n|]{0,200}\|\s*(sudo\s+)?(ba|z)?sh\b")),
+    ("давление", re.compile(r"(?i)\b(this is (very |extremely )?(important|urgent|critical)|it is (very )?(important|crucial|essential) that you|(do|go) (it|this|ahead)( and)? (now|immediately|asap)?|asap)\b[!.]?")),
+    ("давление", re.compile(r"(?i)(это (очень )?важно|срочно|немедленно)[!.]")),
+    ("захват области", re.compile(r"(?i)\b(all|every)\b[^.\n]{0,25}\b(author'?s?|user'?s?|owner'?s?|your)\b[^.\n]{0,25}\b(other )?(repos?|repositories|files|projects|notes|emails|messages)\b|\b(private|confidential|internal)\s+(repos?|repositories|data|files|notes|documents)\b|\b(does not|doesn't) mind[^.\n]{0,20}privacy\b")),
     ("отправка секретов", re.compile(r"(?i)\b(send|post|upload|exfiltrate|forward|curl)\b[^.\n]{0,80}\b(\.env|id_rsa|credentials|api[_ -]?keys?|secrets?|tokens?|passwords?|ssh key)\b")),
 ]
 HIDDEN_CHARS = "\U000e0000-\U000e007f\u2060-\u2064\u202a-\u202e\u2066-\u2069"
 INVISIBLE_RUN = re.compile("[" + HIDDEN_CHARS + "]{8,}")  # короткие последовательности бывают в флагах-эмодзи, скрытый текст длиннее
 
 
-WEAK_LABELS = {"приказ выполнить"}  # встречается в обычных инструкциях («сначала выполните npm install»): сама по себе не повод
+WEAK_LABELS = {"приказ выполнить", "давление", "захват области"}  # встречается в обычных инструкциях («сначала выполните npm install»): сама по себе не повод
 
 
 @dataclass

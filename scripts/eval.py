@@ -55,5 +55,5 @@ def evaluate(split, verbose=True):
 
 if __name__ == "__main__":
     assert sinks
-    for split in ("train", "holdout", "hard", "public"):
+    for split in ("train", "holdout", "hard", "public", "trifecta"):
         evaluate(split)

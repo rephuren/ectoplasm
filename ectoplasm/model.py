@@ -13,6 +13,16 @@ WEB_TOOLS = {"WebFetch", "WebSearch"}
 NETWORK_CMD = re.compile(r"\b(curl|wget|http|gh\s+(api|pr|issue)|git\s+(clone|fetch|pull)|npm\s+(view|info)|pip\s+download|nslookup|dig)\b")
 
 
+URL_HOST = re.compile(r"https?://([^/\s:'\"]+|\[[^\]]*\])")
+LOCAL_HOSTS = {"localhost", "127.0.0.1", "0.0.0.0", "[::1]"}
+
+
+def _only_local(cmd: str) -> bool:
+    """Все адреса в команде ведут на эту же машину: ответ локального сервера не приходит из внешнего мира."""
+    hosts = URL_HOST.findall(cmd)
+    return bool(hosts) and all(h.lower() in LOCAL_HOSTS for h in hosts)
+
+
 HEREDOC = re.compile(r"<<-?\s*(['\"]?)(\w+)\1[^\n]*\n.*?\n\s*\2\b", re.S)
 
 
@@ -55,7 +65,10 @@ def classify_source(tool: str | None, call_input: dict) -> tuple[str, int]:
         return "local", RANK_LOCAL
     if name == "Bash":
         cmd = str(call_input.get("command", ""))
-        return ("shell", RANK_UNTRUSTED) if NETWORK_CMD.search(_strip_heredocs(cmd)) else ("shell", RANK_LOCAL)
+        body = _strip_heredocs(cmd)
+        if NETWORK_CMD.search(body) and not _only_local(body):
+            return "shell", RANK_UNTRUSTED
+        return "shell", RANK_LOCAL
     if name.startswith("mcp__"):
         if name.startswith(TRUSTED_MCP_PREFIXES):
             return "local", RANK_LOCAL

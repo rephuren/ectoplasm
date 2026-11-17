@@ -3,7 +3,7 @@ import sys
 import tempfile
 from pathlib import Path
 
-from . import demo, htmlreport, render, trace, transcript
+from . import demo, htmlreport, judge, render, trace, transcript
 
 
 def _scan(args) -> int:
@@ -39,6 +39,7 @@ def main(argv=None) -> int:
     tr.add_argument("session", help="журнал сессии Claude Code (.jsonl)")
     tr.add_argument("--min-confidence", choices=("weak", "medium", "strong"), default="medium", help="порог уверенности связи (по умолчанию medium)")
     tr.add_argument("--json", action="store_true")
+    tr.add_argument("--judge-cmd", metavar="КОМАНДА", help="внешний судья: команда читает текст из stdin и печатает JSON {\"injection\": true|false}")
     tr.add_argument("--html", metavar="ФАЙЛ", help="сохранить отчёт в HTML: временная шкала сессии и цепочки")
     tr.add_argument("--no-color", action="store_true")
     sc = sub.add_parser("scan", help="пройтись по папке с журналами и показать, где есть связи")
@@ -75,7 +76,8 @@ def main(argv=None) -> int:
     except OSError as e:
         print(f"{args.session}: {e}", file=sys.stderr)
         return 2
-    incidents = trace.report(session, args.min_confidence)
+    judge_fn = judge.command_judge(args.judge_cmd) if args.judge_cmd else None
+    incidents = trace.report(session, args.min_confidence, judge_fn)
     hidden = trace.hidden_text(session)
     if args.html:
         Path(args.html).write_text(htmlreport.render(session, incidents, args.min_confidence, hidden), encoding="utf-8")

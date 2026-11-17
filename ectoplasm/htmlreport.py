@@ -34,7 +34,7 @@ CSS = (
 CSP = "default-src 'none'; style-src 'unsafe-inline'"
 SEV = {"critical": "критично", "high": "высокий", "medium": "средний", "low": "низкий"}
 CONF = {"strong": "связь сильная", "medium": "связь средняя", "weak": "связь слабая"}
-KIND_LABEL = {"provenance": "происхождение адреса", "path": "происхождение пути", "instruction": "похоже на инструкцию", "proximity": "близость по времени"}
+KIND_LABEL = {"trifecta": "смертельная тройка", "provenance": "происхождение адреса", "path": "происхождение пути", "instruction": "похоже на инструкцию", "proximity": "близость по времени"}
 MAX_CELLS = 4000
 
 

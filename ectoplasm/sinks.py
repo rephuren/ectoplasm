@@ -6,7 +6,7 @@ from .model import _strip_heredocs
 
 SEVERITY = {"low": 1, "medium": 2, "high": 3, "critical": 4}
 
-SECRET_BODY = (r"(\.env\b|\.env\.|id_(rsa|ed25519|ecdsa)|\.aws/credentials|\.npmrc|\.netrc|\.git-credentials|\.ssh/|\.pypirc|\.kube/config|\.docker/config\.json|keychain|\.gnupg)")
+SECRET_BODY = (r"(\.env(?!\.(example|sample|template|dist)\b)\b|\.env\.(?!example|sample|template|dist)|id_(rsa|ed25519|ecdsa)|\.aws/credentials|\.npmrc|\.netrc|\.git-credentials|\.ssh/|\.pypirc|\.kube/config|\.docker/config\.json|keychain|\.gnupg)")
 SECRET_PATH = re.compile(SECRET_BODY, re.I)
 CONFIG_BODY = (
     r"(\.bashrc|\.zshrc|\.zprofile|\.bash_profile|\.profile\b|authorized_keys|crontab|LaunchAgents|LaunchDaemons|\.git/hooks/|\.github/workflows/|"

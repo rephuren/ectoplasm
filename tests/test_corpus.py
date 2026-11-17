@@ -34,9 +34,15 @@ def test_every_attack_names_its_sink():
 
 def test_public_cases_split():
     tp, fn, fp, tn = evaluate("public", verbose=False)
-    assert (fn, fp) == (0, 0) and tp == 7 and tn == 5  # тексты атак реконструированы мной, правила писались с оглядкой на них: оценка по построению оптимистична
+    assert (fn, fp) == (0, 0) and tp == 8 and tn == 5  # тексты атак реконструированы мной, правила писались с оглядкой на них: оценка по построению оптимистична
 
 
 def test_public_limits_stay_invisible():
     limits = [name for name, kind, _e, _f in SCENARIOS["public"] if kind == "limit"]
-    assert limits == ["p_github_mcp_toxic_flow", "p_amazon_q_wiper", "p_s1ngularity_spawned_session", "p_postmark_hidden_bcc"]
+    assert limits == ["p_amazon_q_wiper", "p_s1ngularity_spawned_session", "p_postmark_hidden_bcc"]
+
+
+def test_trifecta_split_and_its_limit():
+    tp, fn, fp, tn = evaluate("trifecta", verbose=False)
+    assert (tp, fn, fp, tn) == (2, 0, 0, 2)
+    assert [n for n, k, _e, _f in SCENARIOS["trifecta"] if k == "limit"] == ["r_soft_page_scope_escape"]  # чужой ресурс без секретов и без слов-инструкций: только слабая связь
