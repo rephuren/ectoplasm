@@ -3,7 +3,7 @@ import sys
 import tempfile
 from pathlib import Path
 
-from . import demo, htmlreport, judge, render, trace, transcript
+from . import demo, hook, htmlreport, judge, render, rules, sarif, stats, trace, transcript
 
 
 def _scan(args) -> int:
@@ -41,7 +41,19 @@ def main(argv=None) -> int:
     tr.add_argument("--json", action="store_true")
     tr.add_argument("--judge-cmd", metavar="КОМАНДА", help="внешний судья: команда читает текст из stdin и печатает JSON {\"injection\": true|false}")
     tr.add_argument("--html", metavar="ФАЙЛ", help="сохранить отчёт в HTML: временная шкала сессии и цепочки")
+    tr.add_argument("--sarif", metavar="ФАЙЛ", help="сохранить находки в SARIF 2.1.0 (GitHub code scanning)")
     tr.add_argument("--no-color", action="store_true")
+    hk = sub.add_parser("hook", help="хук Claude Code (PreToolUse): спросить подтверждение до выполнения связанного с недоверенным текстом действия")
+    hk.add_argument("--mode", dest="hook_mode", choices=("ask", "deny", "warn"), default="ask", help="ask просит подтверждение (по умолчанию), deny запрещает, warn только пишет в stderr")
+    hk.add_argument("--min-confidence", choices=("weak", "medium", "strong"), default="medium")
+    hk.add_argument("--print-config", action="store_true", help="напечатать фрагмент для settings.json и выйти (файл настроек не меняется)")
+    rp = sub.add_parser("report", help="сводка по папке журналов: источники, действия, дни")
+    rp.add_argument("path", nargs="?", default="~/.claude/projects")
+    rp.add_argument("--min-confidence", choices=("weak", "medium", "strong"), default="medium")
+    rp.add_argument("--json", action="store_true")
+    rp.add_argument("--html", metavar="ФАЙЛ")
+    ru = sub.add_parser("rules", help="правила в JSON для шлюза и других инструментов")
+    ru.add_argument("--json", action="store_true", default=True)
     sc = sub.add_parser("scan", help="пройтись по папке с журналами и показать, где есть связи")
     sc.add_argument("path", nargs="?", default="~/.claude/projects", help="папка с журналами (по умолчанию ~/.claude/projects)")
     sc.add_argument("--min-confidence", choices=("weak", "medium", "strong"), default="medium")
@@ -71,6 +83,24 @@ def main(argv=None) -> int:
 
     if args.mode == "scan":
         return _scan(args)
+    if args.mode == "hook":
+        if args.print_config:
+            import json
+            print(json.dumps(hook.CONFIG, indent=2))
+            return 0
+        return hook.main_stdio(args.hook_mode, args.min_confidence)
+    if args.mode == "rules":
+        sys.stdout.write(rules.render())
+        return 0
+    if args.mode == "report":
+        root = Path(args.path).expanduser()
+        files = [root] if root.is_file() else sorted(root.rglob("*.jsonl"))
+        data = stats.collect(files, args.min_confidence)
+        if args.html:
+            Path(args.html).write_text(stats.render_html(data), encoding="utf-8")
+            print(f"HTML-сводка сохранена: {args.html}", file=sys.stderr)
+        sys.stdout.write(stats.as_json(data) if args.json else stats.text(data))
+        return 0
     try:
         session = transcript.load(args.session)
     except OSError as e:
@@ -79,6 +109,9 @@ def main(argv=None) -> int:
     judge_fn = judge.command_judge(args.judge_cmd) if args.judge_cmd else None
     incidents = trace.report(session, args.min_confidence, judge_fn)
     hidden = trace.hidden_text(session)
+    if args.sarif:
+        Path(args.sarif).write_text(sarif.render([(session, incidents, hidden)]), encoding="utf-8")
+        print(f"SARIF сохранён: {args.sarif}", file=sys.stderr)
     if args.html:
         Path(args.html).write_text(htmlreport.render(session, incidents, args.min_confidence, hidden), encoding="utf-8")
         print(f"HTML-отчёт сохранён: {args.html}", file=sys.stderr)

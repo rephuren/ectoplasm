@@ -1,5 +1,7 @@
 """Разбор журнала сессии Claude Code (jsonl): остаются только реплики и вызовы инструментов, шум клиента отбрасывается."""
+import contextlib
 import json
+import os
 
 from .model import RANK_LOCAL, RANK_UNTRUSTED, RANK_USER, Event, Session, classify_source
 from .sinks import command_of
@@ -23,11 +25,22 @@ def _text_of(content) -> str:
     return ""
 
 
-def load(path) -> Session:
+@contextlib.contextmanager
+def _open(path, tail_bytes: int | None):
+    """Строки журнала; при tail_bytes только хвост файла, начиная с целой строки (нужно хуку: ход обычно короткий, а файл бывает в десятки мегабайт)."""
+    with open(path, "rb") as raw:
+        size = os.fstat(raw.fileno()).st_size
+        if tail_bytes and size > tail_bytes:
+            raw.seek(size - tail_bytes)
+            raw.readline()
+        yield (chunk.decode("utf-8", errors="replace") for chunk in raw)
+
+
+def load(path, tail_bytes: int | None = None) -> Session:
     session = Session(path=str(path))
     calls: dict[str, Event] = {}
     taint = Taint()
-    with open(path, encoding="utf-8", errors="replace") as fh:
+    with _open(path, tail_bytes) as fh:
         for line in fh:
             line = line.strip()
             if not line:

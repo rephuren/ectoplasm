@@ -34,6 +34,8 @@ select = ["E", "F", "I", "B", "UP", "W"]
 [tool.ruff.lint.per-file-ignores]
 "ectoplasm/sinks.py" = ["E501"]
 "ectoplasm/injection.py" = ["E501"]
+"ectoplasm/stats.py" = ["E501"]
+"ectoplasm/rules.py" = ["E501"]
 "tests/corpus/*.py" = ["E501"]
 
 [tool.mypy]
