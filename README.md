@@ -28,6 +28,8 @@ python3 -m venv .venv && .venv/bin/pip install .
 .venv/bin/seance demo                                   # синтетическая отравленная сессия, домены в зоне .test
 .venv/bin/seance trace ~/.claude/projects/<проект>/<сессия>.jsonl
 .venv/bin/seance trace session.jsonl --min-confidence weak --json
+.venv/bin/seance trace session.jsonl --html report.html   # временная шкала сессии и цепочки, без скриптов
+.venv/bin/seance scan                                     # пройтись по всем журналам в ~/.claude/projects
 ```
 
 Код возврата 1, если есть связь уровня «сильная»; 2, если файл не читается. Зависимостей нет, только стандартная библиотека. Журнал читается локально и никуда не отправляется, секреты в выводе маскируются.
