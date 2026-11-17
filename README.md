@@ -108,6 +108,13 @@ ectoplasm rules > rules.json                              # правила в JS
 - **Только формат Claude Code.** Журналы других агентов не разбираются.
 - Правила на английском и русском, остальные языки не покрыты.
 
+## Дальше
+
+- [docs/CASES.md](docs/CASES.md): разбор десяти публичных атак и что видно в журнале.
+- [docs/INTEGRATIONS.md](docs/INTEGRATIONS.md): как это соотносится с basilisk (до) и citadel (во время), что можно соединить, чего нет.
+- [docs/RESEARCH.md](docs/RESEARCH.md): исследовательская постановка вопроса об атрибуции и её границах.
+- [docs/FORMAT.md](docs/FORMAT.md), [docs/CI.md](docs/CI.md): универсальный формат журнала и подключение к GitHub Actions.
+
 ## Разработка
 
 ```bash
