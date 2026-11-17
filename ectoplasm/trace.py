@@ -90,35 +90,87 @@ def _tokens(text: str) -> list[str]:
     return sorted(out)
 
 
-def analyze(session: Session) -> list[Incident]:
+READ_VERB = re.compile(r"(?i)(^|_)(get|read|list|search|query|fetch|select|find|describe|show|view|cat|open)(_|$)")
+RESOURCE_KEYS = {"repo", "repository", "owner", "table", "path", "channel", "project", "database", "db", "file", "folder", "bucket", "workspace"}
+SLASH_NAME = re.compile(r"\b[\w.-]{2,}/[\w.-]{2,}\b")
+TRIFECTA_SPAN = 40  # событий между недоверенным текстом и отправкой
+EXFIL_LEG = {"exfil", "network-send", "url-exfil", "mcp-write", "git-push", "remote-exec"}
+
+
+def _resources(inp: dict) -> set[str]:
+    """Названия ресурсов, к которым обращается MCP-вызов: репозиторий, таблица, путь, канал."""
+    out: set[str] = set()
+    for key, val in inp.items():
+        if isinstance(val, str):
+            if key.lower() in RESOURCE_KEYS and len(val) >= 3:
+                out.add(val.lower())
+            out.update(m.lower() for m in SLASH_NAME.findall(val) if "://" not in val)
+    return out
+
+
+def analyze(session: Session, judge=None) -> list[Incident]:
     user_texts: list[str] = []  # всё, что написал пользователь и что пришло из окружения клиента, до текущего места
     untrusted: list = []  # все результаты с рангом «недоверенно»
     turn_start = 0  # с какого места untrusted начался текущий ход: новое сообщение пользователя снимает прежние подозрения
     incidents: list[Incident] = []
     seen_hits: dict[int, list] = {}
+    access: list[tuple[int, str, str]] = []  # доступ к данным в текущем ходе: (событие, подпись, сила strong|scope)
     for ev in session.events:
         if ev.kind in ("user", "context"):
             user_texts.append(ev.text.lower())
             if ev.kind == "user":
                 turn_start = len(untrusted)
+                access = []
         elif ev.kind == "result" and ev.rank >= UNTRUSTED_MIN:
             untrusted.append(ev)
         elif ev.kind == "call" and ev.tool:
             found = sinks.classify(ev.tool, ev.input)
+            if len(untrusted) > turn_start:
+                _note_access(access, ev, found, user_texts)
             if not found:
                 continue
             inc = Incident(ev.idx, ev.label(), found)
+            turn = untrusted[turn_start:]
             if any(x.code in NETWORK_SINKS for x in found):
                 _link_provenance(inc, ev, untrusted, user_texts)
-            _link_paths(inc, ev, untrusted[turn_start:], user_texts)
-            _link_instruction(inc, untrusted[turn_start:], seen_hits)
-            if not inc.links and len(untrusted) > turn_start:
+            _link_paths(inc, ev, turn, user_texts)
+            _link_instruction(inc, turn, seen_hits, judge)
+            _link_trifecta(inc, found, turn, access, ev.idx)
+            if not inc.links and turn:
                 last = untrusted[-1]
                 note = "последний недоверенный результат перед действием, связь только по времени"
                 inc.links.append(Link("proximity", last.idx, last.label(), note, ""))
             inc.confidence = _confidence(inc)
             incidents.append(inc)
     return incidents
+
+
+def _note_access(access: list, ev, found: list, user_texts: list[str]) -> None:
+    """Запоминает, что после недоверенного текста агент получил доступ к данным: чтение секретов или обращение к ресурсу, которого пользователь не называл."""
+    if any(x.code == "secret-read" for x in found):
+        access.append((ev.idx, ev.label(), "strong"))
+        return
+    if ev.tool.startswith("mcp__") and not ev.tool.startswith(sinks.MCP_TRUSTED) and READ_VERB.search(ev.tool.rsplit("__", 1)[-1]):
+        foreign = [r for r in _resources(ev.input) if not any(r in u or r.split("/")[-1] in u for u in user_texts)]
+        if foreign:
+            access.append((ev.idx, ev.label(), "scope"))
+
+
+def _link_trifecta(inc: Incident, found: list, turn: list, access: list, idx: int) -> None:
+    """В одном ходе: недоверенный текст, затем доступ к данным, затем отправка наружу. Формулировка текста не важна."""
+    if not turn or not any(x.code in EXFIL_LEG for x in found):
+        return
+    sources = [r for r in turn if r.source in ("web", "mcp", "clone") and idx - r.idx <= TRIFECTA_SPAN]
+    if not sources:
+        return  # длинные автономные ходы: тройка складывается случайно, если до отправки далеко от текста
+    src = sources[0]
+    legs = [a for a in access if src.idx < a[0] <= idx]
+    if not legs:
+        return
+    leg = max(legs, key=lambda a: a[2] == "strong")
+    kind = "секреты" if leg[2] == "strong" else "ресурс, которого пользователь не называл"
+    note = f"в этом ходе недоверенный текст ({src.label()}), затем доступ к данным ({leg[1]}: {kind}), затем отправка наружу"
+    inc.links.append(Link("trifecta", src.idx, src.label(), note, "секреты" if leg[2] == "strong" else ""))
 
 
 def _link_provenance(inc: Incident, ev, untrusted: list, user_texts: list[str]) -> None:
@@ -157,11 +209,20 @@ def _link_paths(inc: Incident, ev, turn_results: list, user_texts: list[str]) ->
                 break
 
 
-def _link_instruction(inc: Incident, untrusted: list, cache: dict) -> None:
+def _hits(text: str, judge) -> list:
+    hits = injection.convincing(injection.find(text))
+    if not hits and judge is not None:
+        verdict = judge(text)
+        if verdict:
+            hits = [injection.Hit("оценка внешним судьёй", 0, min(len(text), 80), "")]
+    return hits
+
+
+def _link_instruction(inc: Incident, untrusted: list, cache: dict, judge=None) -> None:
     for res in untrusted[-WINDOW:]:
         hits = cache.get(res.idx)
         if hits is None:
-            hits = cache[res.idx] = injection.convincing(injection.find(res.text))
+            hits = cache[res.idx] = _hits(res.text, judge)
         if hits:
             h = hits[0]
             evidence = f"скрытый текст: {mask(h.decoded)}" if h.decoded else snippet(res.text, h.start, h.end)
@@ -175,6 +236,8 @@ def _confidence(inc: Incident) -> str:
         return "weak"  # мелкие действия вроде обычного POST-запроса не поднимаем выше слабой связи
     if "provenance" in kinds:
         return "strong"
+    if "trifecta" in kinds and (any(a in kinds for a in ("instruction", "path")) or any(link.kind == "trifecta" and link.evidence == "секреты" for link in inc.links)):
+        return "medium"
     if "path" in kinds:
         return "medium"
     if "instruction" in kinds and top >= sinks.SEVERITY["medium"]:
@@ -182,6 +245,6 @@ def _confidence(inc: Incident) -> str:
     return "weak"
 
 
-def report(session: Session, min_confidence: str = "medium") -> list[Incident]:
+def report(session: Session, min_confidence: str = "medium", judge=None) -> list[Incident]:
     floor = CONFIDENCE[min_confidence]
-    return [i for i in analyze(session) if CONFIDENCE[i.confidence] >= floor]
+    return [i for i in analyze(session, judge) if CONFIDENCE[i.confidence] >= floor]
