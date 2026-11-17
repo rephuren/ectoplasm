@@ -6,6 +6,8 @@ RANK_USER, RANK_LOCAL, RANK_UNTRUSTED = 0, 1, 3
 UNTRUSTED_MIN = RANK_UNTRUSTED
 
 BROWSER_HINTS = ("browser", "chrome", "playwright", "puppeteer", "fetch", "search", "web", "http", "scrape", "crawl")
+# серверы самого клиента: их ответы не приходят из внешнего мира
+TRUSTED_MCP_PREFIXES = ("mcp__ccd_", "mcp__visualize__", "mcp__terminal__", "mcp__scheduled-tasks__")
 LOCAL_TOOLS = {"Read", "Grep", "Glob", "LS", "NotebookRead", "TodoWrite", "ToolSearch", "Skill"}
 WEB_TOOLS = {"WebFetch", "WebSearch"}
 NETWORK_CMD = re.compile(r"\b(curl|wget|http|gh\s+(api|pr|issue)|git\s+(clone|fetch|pull)|npm\s+(view|info)|pip\s+download|nslookup|dig)\b")
@@ -30,9 +32,11 @@ class Event:
     source: str | None = None  # для result: web | mcp | shell | local
     rank: int = RANK_USER
     sidechain: bool = False
+    cwd: str = ""
 
     def label(self) -> str:
-        return f"#{self.idx} {self.tool}" if self.tool else f"#{self.idx} {self.kind}"
+        base = f"#{self.idx} {self.tool}" if self.tool else f"#{self.idx} {self.kind}"
+        return base + " (скачанный или сторонний код)" if self.source == "clone" else base
 
 
 @dataclass
@@ -53,6 +57,8 @@ def classify_source(tool: str | None, call_input: dict) -> tuple[str, int]:
         cmd = str(call_input.get("command", ""))
         return ("shell", RANK_UNTRUSTED) if NETWORK_CMD.search(_strip_heredocs(cmd)) else ("shell", RANK_LOCAL)
     if name.startswith("mcp__"):
+        if name.startswith(TRUSTED_MCP_PREFIXES):
+            return "local", RANK_LOCAL
         low = name.lower()
         if any(h in low for h in BROWSER_HINTS):
             return "web", RANK_UNTRUSTED
