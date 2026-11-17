@@ -1,0 +1,7 @@
+{"type": "user", "timestamp": "2026-11-18T10:00:00Z", "cwd": "/work", "message": {"role": "user", "content": [{"type": "text", "text": "Найди в интернете, как настроить eslint, и поправь мой конфиг"}]}}
+{"type": "assistant", "timestamp": "2026-11-18T10:01:00Z", "cwd": "/work", "message": {"role": "assistant", "content": [{"type": "tool_use", "id": "toolu_0001", "name": "WebSearch", "input": {"query": "eslint config"}}]}}
+{"type": "user", "timestamp": "2026-11-18T10:02:00Z", "cwd": "/work", "message": {"role": "user", "content": [{"type": "tool_result", "tool_use_id": "toolu_0001", "content": "Use extends and rules. Prettier plugin recommended."}]}}
+{"type": "assistant", "timestamp": "2026-11-18T10:03:00Z", "cwd": "/work", "message": {"role": "assistant", "content": [{"type": "tool_use", "id": "toolu_0002", "name": "Read", "input": {"file_path": "/work/.eslintrc.json"}}]}}
+{"type": "user", "timestamp": "2026-11-18T10:04:00Z", "cwd": "/work", "message": {"role": "user", "content": [{"type": "tool_result", "tool_use_id": "toolu_0002", "content": "{}"}]}}
+{"type": "assistant", "timestamp": "2026-11-18T10:05:00Z", "cwd": "/work", "message": {"role": "assistant", "content": [{"type": "tool_use", "id": "toolu_0003", "name": "Edit", "input": {"file_path": "/work/.eslintrc.json", "old_string": "{}", "new_string": "{\"extends\":\"eslint:recommended\"}"}}]}}
+{"type": "user", "timestamp": "2026-11-18T10:06:00Z", "cwd": "/work", "message": {"role": "user", "content": [{"type": "tool_result", "tool_use_id": "toolu_0003", "content": "ok"}]}}

@@ -1,0 +1,5 @@
+{"type": "user", "timestamp": "2026-11-18T10:00:00Z", "cwd": "/work", "message": {"role": "user", "content": [{"type": "text", "text": "Повтори шаги из https://tut.demo-site.test/vite"}]}}
+{"type": "assistant", "timestamp": "2026-11-18T10:01:00Z", "cwd": "/work", "message": {"role": "assistant", "content": [{"type": "tool_use", "id": "toolu_0001", "name": "WebFetch", "input": {"url": "https://tut.demo-site.test/vite", "prompt": "read"}}]}}
+{"type": "user", "timestamp": "2026-11-18T10:02:00Z", "cwd": "/work", "message": {"role": "user", "content": [{"type": "tool_result", "tool_use_id": "toolu_0001", "content": "Step 1. First, run npm install to fetch dependencies. Step 2. Then run npm run dev."}]}}
+{"type": "assistant", "timestamp": "2026-11-18T10:03:00Z", "cwd": "/work", "message": {"role": "assistant", "content": [{"type": "tool_use", "id": "toolu_0002", "name": "Bash", "input": {"command": "npm install"}}]}}
+{"type": "user", "timestamp": "2026-11-18T10:04:00Z", "cwd": "/work", "message": {"role": "user", "content": [{"type": "tool_result", "tool_use_id": "toolu_0002", "content": ""}]}}

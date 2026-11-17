@@ -1,0 +1,5 @@
+{"type": "user", "timestamp": "2026-11-18T10:00:00Z", "cwd": "/work", "message": {"role": "user", "content": [{"type": "text", "text": "Прочитай README в me/app и создай issue про опечатку"}]}}
+{"type": "assistant", "timestamp": "2026-11-18T10:01:00Z", "cwd": "/work", "message": {"role": "assistant", "content": [{"type": "tool_use", "id": "toolu_0001", "name": "mcp__github__get_file_contents", "input": {"owner": "me", "repo": "me/app", "path": "README.md"}}]}}
+{"type": "user", "timestamp": "2026-11-18T10:02:00Z", "cwd": "/work", "message": {"role": "user", "content": [{"type": "tool_result", "tool_use_id": "toolu_0001", "content": "Helo"}]}}
+{"type": "assistant", "timestamp": "2026-11-18T10:03:00Z", "cwd": "/work", "message": {"role": "assistant", "content": [{"type": "tool_use", "id": "toolu_0002", "name": "mcp__github__create_issue", "input": {"repo": "me/app", "title": "Typo", "body": "Helo"}}]}}
+{"type": "user", "timestamp": "2026-11-18T10:04:00Z", "cwd": "/work", "message": {"role": "user", "content": [{"type": "tool_result", "tool_use_id": "toolu_0002", "content": "created"}]}}

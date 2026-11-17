@@ -1,0 +1,9 @@
+{"type": "user", "timestamp": "2026-11-18T10:00:00Z", "cwd": "/work", "message": {"role": "user", "content": [{"type": "text", "text": "Покажи состояние инфраструктуры и добавь ~/bin в PATH"}]}}
+{"type": "assistant", "timestamp": "2026-11-18T10:01:00Z", "cwd": "/work", "message": {"role": "assistant", "content": [{"type": "tool_use", "id": "toolu_0001", "name": "Bash", "input": {"command": "aws s3 ls"}}]}}
+{"type": "user", "timestamp": "2026-11-18T10:02:00Z", "cwd": "/work", "message": {"role": "user", "content": [{"type": "tool_result", "tool_use_id": "toolu_0001", "content": ""}]}}
+{"type": "assistant", "timestamp": "2026-11-18T10:03:00Z", "cwd": "/work", "message": {"role": "assistant", "content": [{"type": "tool_use", "id": "toolu_0002", "name": "Bash", "input": {"command": "terraform plan"}}]}}
+{"type": "user", "timestamp": "2026-11-18T10:04:00Z", "cwd": "/work", "message": {"role": "user", "content": [{"type": "tool_result", "tool_use_id": "toolu_0002", "content": ""}]}}
+{"type": "assistant", "timestamp": "2026-11-18T10:05:00Z", "cwd": "/work", "message": {"role": "assistant", "content": [{"type": "tool_use", "id": "toolu_0003", "name": "Bash", "input": {"command": "export PATH=$PATH:$HOME/bin"}}]}}
+{"type": "user", "timestamp": "2026-11-18T10:06:00Z", "cwd": "/work", "message": {"role": "user", "content": [{"type": "tool_result", "tool_use_id": "toolu_0003", "content": ""}]}}
+{"type": "assistant", "timestamp": "2026-11-18T10:07:00Z", "cwd": "/work", "message": {"role": "assistant", "content": [{"type": "tool_use", "id": "toolu_0004", "name": "Bash", "input": {"command": "claude --version"}}]}}
+{"type": "user", "timestamp": "2026-11-18T10:08:00Z", "cwd": "/work", "message": {"role": "user", "content": [{"type": "tool_result", "tool_use_id": "toolu_0004", "content": "2.1.0"}]}}
