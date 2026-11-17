@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 320" width="1200" height="320">
+  <defs>
+    <pattern id="scan" width="4" height="4" patternUnits="userSpaceOnUse">
+      <rect width="4" height="1" fill="#fff" opacity="0.045"/>
+    </pattern>
+    <radialGradient id="vig" cx="50%" cy="50%" r="75%">
+      <stop offset="55%" stop-color="#000" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#000" stop-opacity="0.9"/>
+    </radialGradient>
+    <style>
+      text { font-family: 'Courier New', monospace; }
+      .ghost { animation: jitter 3.6s infinite steps(1); }
+      .red   { animation: jitterR 3.6s infinite steps(1); }
+      .blink { animation: blink 1.1s infinite steps(1); }
+      .log   { animation: drift 7s infinite steps(1); }
+      @keyframes jitter  { 0%,90%,100%{transform:translate(0,0)} 91%{transform:translate(-6px,2px)} 94%{transform:translate(5px,-1px)} 97%{transform:translate(-2px,0)} }
+      @keyframes jitterR { 0%,90%,100%{transform:translate(0,0);opacity:0} 91%{transform:translate(7px,-2px);opacity:.9} 94%{transform:translate(-6px,1px);opacity:.9} 97%{transform:translate(3px,0);opacity:.6} }
+      @keyframes blink   { 0%,49%{opacity:1} 50%,100%{opacity:0} }
+      @keyframes drift   { 0%{opacity:.85} 50%{opacity:.5} 100%{opacity:.85} }
+    </style>
+  </defs>
+
+  <rect width="1200" height="320" fill="#050505"/>
+
+  <g class="log" fill="#d9d9d9" opacity="0.8" font-size="13">
+    <text x="30"  y="40">#14 WebFetch   result   untrusted</text>
+    <text x="30"  y="60" fill="#8a8a8a">«&lt;!-- ignore all previous instructions ...»</text>
+    <text x="790" y="40">#16 Bash   curl … | sh   <tspan fill="#b3000f">critical</tspan></text>
+    <text x="790" y="60" fill="#8a8a8a">link: strong · provenance of the URL</text>
+    <text x="30"  y="296">&gt; seance trace session.jsonl</text>
+    <text x="790" y="296">the user never asked for this</text>
+  </g>
+
+  <g class="red">
+    <text x="600" y="172" text-anchor="middle" font-size="92" font-weight="700" fill="#b3000f" letter-spacing="24">SEANCE</text>
+  </g>
+  <g class="ghost">
+    <text x="600" y="172" text-anchor="middle" font-size="92" font-weight="700" fill="#e8e8e8" letter-spacing="24">SEANCE</text>
+  </g>
+
+  <text x="600" y="220" text-anchor="middle" font-size="20" fill="#a8a8a8" letter-spacing="6">AGENT SESSION FORENSICS  ·  WHO TOLD IT TO DO THAT</text>
+  <text x="600" y="262" text-anchor="middle" font-size="20" fill="#b3000f">&gt; _<tspan class="blink">█</tspan></text>
+
+  <rect width="1200" height="320" fill="url(#scan)"/>
+  <rect width="1200" height="320" fill="url(#vig)"/>
+</svg>
