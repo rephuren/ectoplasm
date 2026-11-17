@@ -12,7 +12,7 @@ def text(session, incidents, color: bool, hidden=()) -> str:
     def c(code, s):
         return f"{code}{s}{RESET}" if color and code else s
 
-    out = [c(BOLD, "seance") + c(DIM, f"  {session.path}  (событий {len(session.events)})")]
+    out = [c(BOLD, "ectoplasm") + c(DIM, f"  {session.path}  (событий {len(session.events)})")]
     if not incidents:
         out += ["", "  опасных действий со связью с недоверенным текстом не найдено"]
     for inc in incidents:

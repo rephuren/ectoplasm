@@ -2,9 +2,9 @@ import json
 
 import pytest
 
-from seance import demo, injection, sinks, trace, transcript
-from seance.__main__ import main
-from seance.demo import Builder
+from ectoplasm import demo, injection, sinks, trace, transcript
+from ectoplasm.__main__ import main
+from ectoplasm.demo import Builder
 
 
 def load(tmp_path, text, name="s.jsonl"):
@@ -227,7 +227,7 @@ def test_third_party_code_is_untrusted(tmp_path):
 
 
 def test_taint_parsing_forms():
-    from seance.taint import Taint
+    from ectoplasm.taint import Taint
     t = Taint()
     t.observe("Bash", "cd /w && git clone https://github.com/a/b.git && gh repo clone c/d dd && wget https://x.test/f.zip && unzip f.zip -d out", "/w")
     assert all(t.is_foreign(p, "/w") for p in ("b/x", "dd/y", "f.zip", "out/z"))

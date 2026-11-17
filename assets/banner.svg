@@ -27,15 +27,15 @@
     <text x="30"  y="60" fill="#8a8a8a">«&lt;!-- ignore all previous instructions ...»</text>
     <text x="790" y="40">#16 Bash   curl … | sh   <tspan fill="#b3000f">critical</tspan></text>
     <text x="790" y="60" fill="#8a8a8a">link: strong · provenance of the URL</text>
-    <text x="30"  y="296">&gt; seance trace session.jsonl</text>
+    <text x="30"  y="296">&gt; ectoplasm trace session.jsonl</text>
     <text x="790" y="296">the user never asked for this</text>
   </g>
 
   <g class="red">
-    <text x="600" y="172" text-anchor="middle" font-size="92" font-weight="700" fill="#b3000f" letter-spacing="24">SEANCE</text>
+    <text x="600" y="172" text-anchor="middle" font-size="92" font-weight="700" fill="#b3000f" letter-spacing="24">ECTOPLASM</text>
   </g>
   <g class="ghost">
-    <text x="600" y="172" text-anchor="middle" font-size="92" font-weight="700" fill="#e8e8e8" letter-spacing="24">SEANCE</text>
+    <text x="600" y="172" text-anchor="middle" font-size="92" font-weight="700" fill="#e8e8e8" letter-spacing="24">ECTOPLASM</text>
   </g>
 
   <text x="600" y="220" text-anchor="middle" font-size="20" fill="#a8a8a8" letter-spacing="6">AGENT SESSION FORENSICS  ·  WHO TOLD IT TO DO THAT</text>

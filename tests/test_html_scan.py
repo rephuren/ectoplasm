@@ -1,8 +1,8 @@
 import json
 
-from seance import demo, htmlreport, trace, transcript
-from seance.__main__ import main
-from seance.demo import Builder
+from ectoplasm import demo, htmlreport, trace, transcript
+from ectoplasm.__main__ import main
+from ectoplasm.demo import Builder
 
 
 def _session(tmp_path, text, name="s.jsonl"):
@@ -52,7 +52,7 @@ def test_cli_writes_html(tmp_path, capsys):
     assert out.read_text(encoding="utf-8").startswith("<!doctype html>")
     out2 = tmp_path / "demo.html"
     assert main(["demo", "--html", str(out2), "--no-color"]) == 0
-    assert "seance" in out2.read_text(encoding="utf-8")
+    assert "ectoplasm" in out2.read_text(encoding="utf-8")
 
 
 def test_scan_ranks_sessions(tmp_path, capsys):
