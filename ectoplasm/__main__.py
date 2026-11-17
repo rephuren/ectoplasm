@@ -1,28 +1,30 @@
 import argparse
+import json
+import os
 import sys
 import tempfile
 from pathlib import Path
 
-from . import demo, hook, htmlreport, judge, render, rules, sarif, stats, trace, transcript
+from . import analysis, bench, demo, hook, htmlreport, judge, render, rules, sarif, stats, trace, transcript
+
+
+def _scale_options(p) -> None:
+    p.add_argument("--format", choices=transcript.FORMATS, default="auto", help="формат журналов (по умолчанию определяется по содержимому)")
+    p.add_argument("-j", "--jobs", type=int, default=min(4, os.cpu_count() or 1), help="сколько процессов использовать (по умолчанию до 4)")
+    p.add_argument("--no-cache", action="store_true", help="не использовать кэш результатов (~/.cache/ectoplasm)")
 
 
 def _scan(args) -> int:
     root = Path(args.path).expanduser()
     files = [root] if root.is_file() else sorted(root.rglob("*.jsonl"))
-    rows: list[dict] = []
-    for f in files:
-        try:
-            session = transcript.load(f)
-        except OSError as e:
-            print(f"{f}: {e}", file=sys.stderr)
-            continue
-        found = trace.report(session, args.min_confidence)
-        rows.append({"path": str(f), "events": len(session.events), "strong": sum(i.confidence == "strong" for i in found),
-                     "medium": sum(i.confidence == "medium" for i in found), "weak": sum(i.confidence == "weak" for i in found),
-                     "hidden": len(trace.hidden_text(session))})
+    floor = stats.CONF_RANK[args.min_confidence]
+    rows = []
+    for r in analysis.analyze_many(files, "weak", args.format, args.jobs, not args.no_cache):
+        found = [i for i in r["incidents"] if stats.CONF_RANK[i["confidence"]] >= floor]
+        rows.append({"path": r["path"], "events": r["events"], "strong": sum(i["confidence"] == "strong" for i in found),
+                     "medium": sum(i["confidence"] == "medium" for i in found), "weak": sum(i["confidence"] == "weak" for i in found), "hidden": r["hidden"]})
     rows.sort(key=lambda r: (-r["hidden"], -r["strong"], -r["medium"], r["path"]))
     if args.json:
-        import json
         sys.stdout.write(json.dumps(rows, ensure_ascii=False, indent=2) + "\n")
     else:
         print(f"{'скрытых':>8} {'сильных':>8} {'средних':>8} {'событий':>8}  журнал")
@@ -39,6 +41,7 @@ def main(argv=None) -> int:
     tr.add_argument("session", help="журнал сессии Claude Code (.jsonl)")
     tr.add_argument("--min-confidence", choices=("weak", "medium", "strong"), default="medium", help="порог уверенности связи (по умолчанию medium)")
     tr.add_argument("--json", action="store_true")
+    tr.add_argument("--format", choices=transcript.FORMATS, default="auto", help="формат журнала: claude, codex (по описаниям, не проверен на реальных файлах), generic (docs/FORMAT.md)")
     tr.add_argument("--judge-cmd", metavar="КОМАНДА", help="внешний судья: команда читает текст из stdin и печатает JSON {\"injection\": true|false}")
     tr.add_argument("--html", metavar="ФАЙЛ", help="сохранить отчёт в HTML: временная шкала сессии и цепочки")
     tr.add_argument("--sarif", metavar="ФАЙЛ", help="сохранить находки в SARIF 2.1.0 (GitHub code scanning)")
@@ -52,12 +55,17 @@ def main(argv=None) -> int:
     rp.add_argument("--min-confidence", choices=("weak", "medium", "strong"), default="medium")
     rp.add_argument("--json", action="store_true")
     rp.add_argument("--html", metavar="ФАЙЛ")
+    _scale_options(rp)
+    bn = sub.add_parser("bench", help="прогнать набор данных с разметкой (dataset/ectoplasm-bench-v1) и показать precision и recall")
+    bn.add_argument("dataset")
+    bn.add_argument("--format", choices=transcript.FORMATS, default="auto")
     ru = sub.add_parser("rules", help="правила в JSON для шлюза и других инструментов")
     ru.add_argument("--json", action="store_true", default=True)
     sc = sub.add_parser("scan", help="пройтись по папке с журналами и показать, где есть связи")
     sc.add_argument("path", nargs="?", default="~/.claude/projects", help="папка с журналами (по умолчанию ~/.claude/projects)")
     sc.add_argument("--min-confidence", choices=("weak", "medium", "strong"), default="medium")
     sc.add_argument("--json", action="store_true")
+    _scale_options(sc)
     dm = sub.add_parser("demo", help="синтетическая отравленная сессия: записать и разобрать")
     dm.add_argument("--out", metavar="ФАЙЛ", help="сохранить журнал демо в файл")
     dm.add_argument("--html", metavar="ФАЙЛ", help="сохранить отчёт демо в HTML")
@@ -85,24 +93,30 @@ def main(argv=None) -> int:
         return _scan(args)
     if args.mode == "hook":
         if args.print_config:
-            import json
             print(json.dumps(hook.CONFIG, indent=2))
             return 0
         return hook.main_stdio(args.hook_mode, args.min_confidence)
+    if args.mode == "bench":
+        try:
+            sys.stdout.write(bench.text(bench.run(Path(args.dataset), args.format)))
+        except (OSError, ValueError, KeyError) as e:
+            print(f"набор не читается: {e.__class__.__name__}: {e}", file=sys.stderr)
+            return 2
+        return 0
     if args.mode == "rules":
         sys.stdout.write(rules.render())
         return 0
     if args.mode == "report":
         root = Path(args.path).expanduser()
         files = [root] if root.is_file() else sorted(root.rglob("*.jsonl"))
-        data = stats.collect(files, args.min_confidence)
+        data = stats.collect(files, args.min_confidence, args.format, args.jobs, not args.no_cache)
         if args.html:
             Path(args.html).write_text(stats.render_html(data), encoding="utf-8")
             print(f"HTML-сводка сохранена: {args.html}", file=sys.stderr)
         sys.stdout.write(stats.as_json(data) if args.json else stats.text(data))
         return 0
     try:
-        session = transcript.load(args.session)
+        session = transcript.load(args.session, fmt=args.format)
     except OSError as e:
         print(f"{args.session}: {e}", file=sys.stderr)
         return 2

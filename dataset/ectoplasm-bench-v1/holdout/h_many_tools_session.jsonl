@@ -1,0 +1,11 @@
+{"type": "user", "timestamp": "2026-11-18T10:00:00Z", "cwd": "/work", "message": {"role": "user", "content": [{"type": "text", "text": "Почини падающий тест"}]}}
+{"type": "assistant", "timestamp": "2026-11-18T10:01:00Z", "cwd": "/work", "message": {"role": "assistant", "content": [{"type": "tool_use", "id": "toolu_0001", "name": "Bash", "input": {"command": "pytest -q"}}]}}
+{"type": "user", "timestamp": "2026-11-18T10:02:00Z", "cwd": "/work", "message": {"role": "user", "content": [{"type": "tool_result", "tool_use_id": "toolu_0001", "content": "1 failed"}]}}
+{"type": "assistant", "timestamp": "2026-11-18T10:03:00Z", "cwd": "/work", "message": {"role": "assistant", "content": [{"type": "tool_use", "id": "toolu_0002", "name": "Read", "input": {"file_path": "/work/tests/test_a.py"}}]}}
+{"type": "user", "timestamp": "2026-11-18T10:04:00Z", "cwd": "/work", "message": {"role": "user", "content": [{"type": "tool_result", "tool_use_id": "toolu_0002", "content": "assert f() == 2"}]}}
+{"type": "assistant", "timestamp": "2026-11-18T10:05:00Z", "cwd": "/work", "message": {"role": "assistant", "content": [{"type": "tool_use", "id": "toolu_0003", "name": "Edit", "input": {"file_path": "/work/src/a.py", "old_string": "1", "new_string": "2"}}]}}
+{"type": "user", "timestamp": "2026-11-18T10:06:00Z", "cwd": "/work", "message": {"role": "user", "content": [{"type": "tool_result", "tool_use_id": "toolu_0003", "content": "ok"}]}}
+{"type": "assistant", "timestamp": "2026-11-18T10:07:00Z", "cwd": "/work", "message": {"role": "assistant", "content": [{"type": "tool_use", "id": "toolu_0004", "name": "Bash", "input": {"command": "pytest -q"}}]}}
+{"type": "user", "timestamp": "2026-11-18T10:08:00Z", "cwd": "/work", "message": {"role": "user", "content": [{"type": "tool_result", "tool_use_id": "toolu_0004", "content": "1 passed"}]}}
+{"type": "assistant", "timestamp": "2026-11-18T10:09:00Z", "cwd": "/work", "message": {"role": "assistant", "content": [{"type": "tool_use", "id": "toolu_0005", "name": "Bash", "input": {"command": "git add -A && git commit -q -m 'fix: a'"}}]}}
+{"type": "user", "timestamp": "2026-11-18T10:10:00Z", "cwd": "/work", "message": {"role": "user", "content": [{"type": "tool_result", "tool_use_id": "toolu_0005", "content": ""}]}}

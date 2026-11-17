@@ -36,7 +36,9 @@ select = ["E", "F", "I", "B", "UP", "W"]
 "ectoplasm/injection.py" = ["E501"]
 "ectoplasm/stats.py" = ["E501"]
 "ectoplasm/rules.py" = ["E501"]
+"tests/*.py" = ["E501"]
 "tests/corpus/*.py" = ["E501"]
+"scripts/*.py" = ["E501"]
 
 [tool.mypy]
 python_version = "3.10"

@@ -1,41 +1,31 @@
 """Сводка по папке журналов: где чаще всего недоверенный текст связан с опасными действиями."""
 import html
 import json
-import re
 from collections import Counter
 
-from . import trace, transcript
+from . import analysis
 
-SOURCE_TOOL = re.compile(r"^#\d+\s+(\S+)")
+CONF_RANK = {"weak": 1, "medium": 2, "strong": 3}
 
 
-def collect(files, min_confidence: str = "medium", loader=transcript.load) -> dict:
+def collect(files, min_confidence: str = "medium", fmt: str = "auto", jobs: int = 1, use_cache: bool = True) -> dict:
     by_sink: Counter = Counter()
     by_source: Counter = Counter()
     by_conf: Counter = Counter()
     by_day: Counter = Counter()
     sessions: list[dict] = []
     hidden_total = 0
-    for f in files:
-        try:
-            session = loader(f)
-        except OSError:
-            continue
-        found = trace.report(session, min_confidence)
-        hidden = trace.hidden_text(session)
-        hidden_total += len(hidden)
+    floor = CONF_RANK[min_confidence]
+    for row in analysis.analyze_many(files, "weak", fmt, jobs, use_cache):
+        found = [i for i in row["incidents"] if CONF_RANK[i["confidence"]] >= floor]
+        hidden_total += row["hidden"]
         for inc in found:
-            by_conf[inc.confidence] += 1
-            by_sink[max(inc.sinks, key=lambda s: s.rank).code] += 1
-            for lk in inc.links:
-                m = SOURCE_TOOL.match(lk.source_label)
-                if lk.kind != "proximity" and m:
-                    by_source[m.group(1)] += 1
-        first = next((e.ts for e in session.events if e.ts), None)
-        if found and first:
-            by_day[first[:10]] += len(found)
-        sessions.append({"path": str(f), "events": len(session.events), "incidents": len(found), "strong": sum(i.confidence == "strong" for i in found),
-                         "hidden": len(hidden)})
+            by_conf[inc["confidence"]] += 1
+            by_sink[inc["code"]] += 1
+            by_source.update(inc["sources"])
+        if found and row["day"]:
+            by_day[row["day"]] += len(found)
+        sessions.append({"path": row["path"], "events": row["events"], "incidents": len(found), "strong": sum(i["confidence"] == "strong" for i in found), "hidden": row["hidden"]})
     sessions.sort(key=lambda r: (-r["hidden"], -r["strong"], -r["incidents"], r["path"]))
     return {"sessions": len(sessions), "events": sum(s["events"] for s in sessions), "incidents": sum(by_conf.values()), "hidden_text": hidden_total,
             "by_confidence": dict(by_conf), "by_sink": dict(by_sink.most_common()), "by_source_tool": dict(by_source.most_common()),

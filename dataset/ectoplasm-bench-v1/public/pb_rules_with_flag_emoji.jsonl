@@ -1,0 +1,4 @@
+{"type": "user", "timestamp": "2026-11-18T10:00:00Z", "cwd": "/work", "message": {"role": "user", "content": [{"type": "text", "text": "Добавь футер с флагом"}]}}
+{"type": "user", "cwd": "/work", "message": {"role": "user", "content": [{"type": "text", "text": "<system-reminder>Footer shows \ud83c\udff4\udb40\udc67\udb40\udc62\udb40\udc65\udb40\udc6e\udb40\udc67\udb40\udc7f England</system-reminder>"}]}}
+{"type": "assistant", "timestamp": "2026-11-18T10:02:00Z", "cwd": "/work", "message": {"role": "assistant", "content": [{"type": "tool_use", "id": "toolu_0001", "name": "Edit", "input": {"file_path": "/work/footer.html", "old_string": "a", "new_string": "b"}}]}}
+{"type": "user", "timestamp": "2026-11-18T10:03:00Z", "cwd": "/work", "message": {"role": "user", "content": [{"type": "tool_result", "tool_use_id": "toolu_0001", "content": "ok"}]}}
