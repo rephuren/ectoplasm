@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "seance"
+version = "0.1.0"
+description = "Разбор сессий ИИ-агентов после инцидента: какой недоверенный текст привёл к опасному действию"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "misxnthropy" }]
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest", "ruff", "mypy"]
+
+[project.scripts]
+seance = "seance.__main__:main"
+
+[tool.setuptools]
+packages = ["seance"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 200
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "W"]
+
+[tool.ruff.lint.per-file-ignores]
+"seance/sinks.py" = ["E501"]
+"seance/injection.py" = ["E501"]
+
+[tool.mypy]
+python_version = "3.10"
+ignore_missing_imports = true
+check_untyped_defs = true
+warn_unused_ignores = true
