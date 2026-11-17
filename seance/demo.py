@@ -3,12 +3,15 @@ import json
 
 
 class Builder:
-    def __init__(self):
+    def __init__(self, cwd: str = "/work"):
+        self.cwd = cwd
         self.lines: list[str] = []
         self._n = 0
 
     def _add(self, typ: str, content, **extra):
-        self.lines.append(json.dumps({"type": typ, "timestamp": f"2026-11-18T10:{len(self.lines) % 60:02d}:00Z", "message": {"role": typ, "content": content}, **extra}, ensure_ascii=False))
+        stamp = f"2026-11-18T10:{len(self.lines) % 60:02d}:00Z"
+        line = {"type": typ, "timestamp": stamp, "cwd": self.cwd, "message": {"role": typ, "content": content}, **extra}
+        self.lines.append(json.dumps(line, ensure_ascii=False))
 
     def user(self, text: str):
         self._add("user", [{"type": "text", "text": text}])
