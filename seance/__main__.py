@@ -18,17 +18,18 @@ def _scan(args) -> int:
             continue
         found = trace.report(session, args.min_confidence)
         rows.append({"path": str(f), "events": len(session.events), "strong": sum(i.confidence == "strong" for i in found),
-                     "medium": sum(i.confidence == "medium" for i in found), "weak": sum(i.confidence == "weak" for i in found)})
-    rows.sort(key=lambda r: (-r["strong"], -r["medium"], r["path"]))
+                     "medium": sum(i.confidence == "medium" for i in found), "weak": sum(i.confidence == "weak" for i in found),
+                     "hidden": len(trace.hidden_text(session))})
+    rows.sort(key=lambda r: (-r["hidden"], -r["strong"], -r["medium"], r["path"]))
     if args.json:
         import json
         sys.stdout.write(json.dumps(rows, ensure_ascii=False, indent=2) + "\n")
     else:
-        print(f"{'сильных':>8} {'средних':>8} {'событий':>8}  журнал")
+        print(f"{'скрытых':>8} {'сильных':>8} {'средних':>8} {'событий':>8}  журнал")
         for r in rows:
-            print(f"{r['strong']:>8} {r['medium']:>8} {r['events']:>8}  {r['path']}")
+            print(f"{r['hidden']:>8} {r['strong']:>8} {r['medium']:>8} {r['events']:>8}  {r['path']}")
         print(f"\nжурналов: {len(rows)}. Разберите нужный командой: seance trace <журнал> [--html отчёт.html]")
-    return 1 if any(r["strong"] for r in rows) else 0
+    return 1 if any(r["strong"] or r["hidden"] for r in rows) else 0
 
 
 def main(argv=None) -> int:
@@ -60,10 +61,11 @@ def main(argv=None) -> int:
         session = transcript.load(path)
         session.path = "demo (синтетическая сессия)"
         incidents = trace.report(session)
+        hidden = trace.hidden_text(session)
         if args.html:
-            Path(args.html).write_text(htmlreport.render(session, incidents), encoding="utf-8")
+            Path(args.html).write_text(htmlreport.render(session, incidents, hidden=hidden), encoding="utf-8")
             print(f"HTML-отчёт сохранён: {args.html}", file=sys.stderr)
-        sys.stdout.write(render.text(session, incidents, sys.stdout.isatty() and not args.no_color))
+        sys.stdout.write(render.text(session, incidents, sys.stdout.isatty() and not args.no_color, hidden))
         return 0
 
     if args.mode == "scan":
@@ -74,14 +76,15 @@ def main(argv=None) -> int:
         print(f"{args.session}: {e}", file=sys.stderr)
         return 2
     incidents = trace.report(session, args.min_confidence)
+    hidden = trace.hidden_text(session)
     if args.html:
-        Path(args.html).write_text(htmlreport.render(session, incidents, args.min_confidence), encoding="utf-8")
+        Path(args.html).write_text(htmlreport.render(session, incidents, args.min_confidence, hidden), encoding="utf-8")
         print(f"HTML-отчёт сохранён: {args.html}", file=sys.stderr)
     if args.json:
-        sys.stdout.write(render.as_json(session, incidents))
+        sys.stdout.write(render.as_json(session, incidents, hidden))
     else:
-        sys.stdout.write(render.text(session, incidents, sys.stdout.isatty() and not args.no_color))
-    return 1 if any(i.confidence == "strong" for i in incidents) else 0
+        sys.stdout.write(render.text(session, incidents, sys.stdout.isatty() and not args.no_color, hidden))
+    return 1 if any(i.confidence == "strong" for i in incidents) or hidden else 0
 
 
 if __name__ == "__main__":

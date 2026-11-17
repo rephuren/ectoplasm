@@ -64,7 +64,7 @@ def _timeline(session, incidents) -> tuple[str, int]:
     return "".join(cells), step
 
 
-def render(session, incidents, shown_floor: str = "medium") -> str:
+def render(session, incidents, shown_floor: str = "medium", hidden=()) -> str:
     e = html.escape
     events = session.events
     untrusted = sum(1 for ev in events if ev.kind == "result" and ev.rank >= UNTRUSTED_MIN)
@@ -82,6 +82,9 @@ def render(session, incidents, shown_floor: str = "medium") -> str:
             f'<div class="inc {e(inc.severity)}"><div class="top"><span class="sev">{e(SEV[inc.severity])}</span><b>{e(inc.sink_label)}</b>'
             f'<span>{e(top.title)}</span><span class="tag {"strong" if inc.confidence == "strong" else ""}">{e(CONF[inc.confidence])}</span></div>'
             f"<code>{e(mask(top.detail)[:600])}</code>{links}{user}</div>")
+    for h in hidden:
+        cards.insert(0, f'<div class="inc critical"><div class="top"><span class="sev">скрытый текст</span><b>{e(h.source_label)}</b>'
+                        f'<span>невидимые символы Unicode: модель их читает, глаза нет</span></div><code>{e(h.decoded or "расшифровать как ASCII не удалось")}</code></div>')
     body = "".join(cards) or '<div class="none">Опасных действий со связью с недоверенным текстом не найдено.</div>'
     scale = f" (одна клетка = {step} событий)" if step > 1 else ""
     return (
@@ -93,7 +96,8 @@ def render(session, incidents, shown_floor: str = "medium") -> str:
         f'<div class="stat"><b>{len(events)}</b><span>событий в журнале</span></div>'
         f'<div class="stat"><b>{untrusted}</b><span>недоверенных результатов</span></div>'
         f'<div class="stat {"hot" if incidents else ""}"><b>{len(incidents)}</b><span>опасных действий со связью (≥ {e(shown_floor)})</span></div>'
-        f'<div class="stat {"hot" if strong else ""}"><b>{strong}</b><span>сильных связей</span></div></div>'
+        f'<div class="stat {"hot" if strong else ""}"><b>{strong}</b><span>сильных связей</span></div>'
+        + (f'<div class="stat hot"><b>{len(hidden)}</b><span>мест со скрытым текстом</span></div>' if hidden else "") + "</div>"
         f"<h2>Ход сессии{e(scale)}</h2>"
         '<div class="legend"><span><b style="background:#e8e8e8"></b>сообщение пользователя</span><span><b style="background:#8a6a00"></b>недоверенный результат</span>'
         '<span><b style="background:#d4a017"></b>источник связи</span><span><b style="background:#b3000f"></b>опасное действие</span></div>'

@@ -30,3 +30,13 @@ def test_every_attack_names_its_sink():
     for split in SCENARIOS.values():
         for name, kind, expect, _fn in split:
             assert (kind == "attack") == (expect is not None), name
+
+
+def test_public_cases_split():
+    tp, fn, fp, tn = evaluate("public", verbose=False)
+    assert (fn, fp) == (0, 0) and tp == 7 and tn == 5  # тексты атак реконструированы мной, правила писались с оглядкой на них: оценка по построению оптимистична
+
+
+def test_public_limits_stay_invisible():
+    limits = [name for name, kind, _e, _f in SCENARIOS["public"] if kind == "limit"]
+    assert limits == ["p_github_mcp_toxic_flow", "p_amazon_q_wiper", "p_s1ngularity_spawned_session", "p_postmark_hidden_bcc"]
