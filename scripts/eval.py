@@ -5,7 +5,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from seance import sinks, trace, transcript  # noqa: E402
+from ectoplasm import sinks, trace, transcript  # noqa: E402
 from tests.corpus.scenarios import SCENARIOS  # noqa: E402
 
 

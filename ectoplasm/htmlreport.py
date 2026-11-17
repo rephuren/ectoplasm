@@ -88,10 +88,10 @@ def render(session, incidents, shown_floor: str = "medium", hidden=()) -> str:
     body = "".join(cards) or '<div class="none">Опасных действий со связью с недоверенным текстом не найдено.</div>'
     scale = f" (одна клетка = {step} событий)" if step > 1 else ""
     return (
-        f'<!doctype html><html lang="ru"><head><meta charset="utf-8"><title>seance: {e(session.path.rsplit("/", 1)[-1])}</title>'
+        f'<!doctype html><html lang="ru"><head><meta charset="utf-8"><title>ectoplasm: {e(session.path.rsplit("/", 1)[-1])}</title>'
         '<meta name="viewport" content="width=device-width,initial-scale=1">'
         f'<meta http-equiv="Content-Security-Policy" content="{CSP}"><style>{CSS}</style></head><body>'
-        f'<h1>seance</h1><p class="meta">{e(session.path)}</p>'
+        f'<h1>ectoplasm</h1><p class="meta">{e(session.path)}</p>'
         '<div class="stats">'
         f'<div class="stat"><b>{len(events)}</b><span>событий в журнале</span></div>'
         f'<div class="stat"><b>{untrusted}</b><span>недоверенных результатов</span></div>'

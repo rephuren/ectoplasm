@@ -8,7 +8,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from seance import demo, htmlreport, trace, transcript  # noqa: E402
+from ectoplasm import demo, htmlreport, trace, transcript  # noqa: E402
 
 CHROME = os.environ.get("CHROME", "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome")
 

@@ -28,12 +28,12 @@ def _scan(args) -> int:
         print(f"{'скрытых':>8} {'сильных':>8} {'средних':>8} {'событий':>8}  журнал")
         for r in rows:
             print(f"{r['hidden']:>8} {r['strong']:>8} {r['medium']:>8} {r['events']:>8}  {r['path']}")
-        print(f"\nжурналов: {len(rows)}. Разберите нужный командой: seance trace <журнал> [--html отчёт.html]")
+        print(f"\nжурналов: {len(rows)}. Разберите нужный командой: ectoplasm trace <журнал> [--html отчёт.html]")
     return 1 if any(r["strong"] or r["hidden"] for r in rows) else 0
 
 
 def main(argv=None) -> int:
-    parser = argparse.ArgumentParser(prog="seance", description="Разбор сессии ИИ-агента после инцидента")
+    parser = argparse.ArgumentParser(prog="ectoplasm", description="Разбор сессии ИИ-агента после инцидента")
     sub = parser.add_subparsers(dest="mode", required=True)
     tr = sub.add_parser("trace", help="найти опасные действия и связать их с недоверенным текстом")
     tr.add_argument("session", help="журнал сессии Claude Code (.jsonl)")

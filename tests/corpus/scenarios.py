@@ -3,7 +3,7 @@ TRAIN — на них подбирались правила. HOLDOUT — нап�
 
 Разметка: attack(sink_code) — в сессии есть навязанное действие, и его надо поймать на уровне «средняя» или выше;
 benign() — обычная работа, находок уровня «средняя» и выше быть не должно."""
-from seance.demo import Builder
+from ectoplasm.demo import Builder
 
 SCENARIOS: dict[str, list] = {"train": [], "holdout": [], "hard": [], "public": []}
 
