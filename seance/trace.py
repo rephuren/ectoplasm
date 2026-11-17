@@ -14,6 +14,7 @@ WINDOW = 8  # сколько последних недоверенных рез�
 URL_RE = sinks.URL_RE
 IP_RE = re.compile(r"\b(?:\d{1,3}\.){3}\d{1,3}\b")
 HOST_RE = re.compile(r"^(?:[a-z0-9-]+\.)+[a-z]{2,}$|^(?:\d{1,3}\.){3}\d{1,3}$")
+PATH_SINKS = {"secret-read", "config-write", "persistence"}
 NETWORK_SINKS = {"remote-exec", "exfil", "url-exfil", "network-send", "git-push"}
 COMMON_HOSTS = {
     "github.com", "raw.githubusercontent.com", "api.github.com", "gist.github.com", "pypi.org", "files.pythonhosted.org", "registry.npmjs.org", "www.npmjs.com",
@@ -89,6 +90,7 @@ def analyze(session: Session) -> list[Incident]:
             inc = Incident(ev.idx, ev.label(), found)
             if any(x.code in NETWORK_SINKS for x in found):
                 _link_provenance(inc, ev, untrusted, user_texts)
+            _link_paths(inc, ev, untrusted[turn_start:], user_texts)
             _link_instruction(inc, untrusted[turn_start:], seen_hits)
             if not inc.links and len(untrusted) > turn_start:
                 last = untrusted[-1]
@@ -118,11 +120,28 @@ def _link_provenance(inc: Incident, ev, untrusted: list, user_texts: list[str]) 
                 break
 
 
+def _link_paths(inc: Incident, ev, turn_results: list, user_texts: list[str]) -> None:
+    """Чувствительный путь (ключи, .env, файлы памяти агента), который назвала недоверенная страница, а пользователь нет."""
+    if not any(x.code in PATH_SINKS for x in inc.sinks):
+        return
+    text = sinks.effective_text(ev.tool or "", ev.input)
+    names = {m.group(0).lower().lstrip("/") for pat in (sinks.SECRET_PATH, sinks.CONFIG_PATH) for m in pat.finditer(text)}
+    for name in sorted(names):
+        if name.endswith("/") or len(name) < 4 or any(name in u for u in user_texts):  # каталоги вроде .claude/ называет любая страница
+            continue
+        for res in reversed(turn_results):
+            pos = res.text.lower().find(name)
+            if pos >= 0:
+                note = f"путь «{name}» назван в этом результате, а в сообщениях пользователя его нет"
+                inc.links.append(Link("path", res.idx, res.label(), note, snippet(res.text, pos, pos + len(name))))
+                break
+
+
 def _link_instruction(inc: Incident, untrusted: list, cache: dict) -> None:
     for res in untrusted[-WINDOW:]:
         hits = cache.get(res.idx)
         if hits is None:
-            hits = cache[res.idx] = injection.find(res.text)
+            hits = cache[res.idx] = injection.convincing(injection.find(res.text))
         if hits:
             h = hits[0]
             evidence = f"скрытый текст: {mask(h.decoded)}" if h.decoded else snippet(res.text, h.start, h.end)
@@ -136,6 +155,8 @@ def _confidence(inc: Incident) -> str:
         return "weak"  # мелкие действия вроде обычного POST-запроса не поднимаем выше слабой связи
     if "provenance" in kinds:
         return "strong"
+    if "path" in kinds:
+        return "medium"
     if "instruction" in kinds and top >= sinks.SEVERITY["medium"]:
         return "medium"
     return "weak"
