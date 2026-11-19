@@ -134,6 +134,7 @@ def analyze(session: Session, judge=None) -> list[Incident]:
             if any(x.code in NETWORK_SINKS for x in found):
                 _link_provenance(inc, ev, untrusted, user_texts)
             _link_paths(inc, ev, turn, user_texts)
+            _link_packages(inc, ev, turn, user_texts)
             _link_instruction(inc, turn, seen_hits, judge)
             _link_trifecta(inc, found, turn, access, ev.idx)
             if not inc.links and turn:
@@ -209,6 +210,38 @@ def _link_paths(inc: Incident, ev, turn_results: list, user_texts: list[str]) ->
                 break
 
 
+INSTALL_CMD = re.compile(r"\b(?:npm\s+(?:install|i|add)|pnpm\s+(?:add|install)|yarn\s+add|pip3?\s+install|uv\s+pip\s+install|cargo\s+(?:install|add)|gem\s+install)\b([^;&|\n]*)")
+PACKAGE_NAME = re.compile(r"^(?:@[a-z0-9][\w.-]*/)?[a-z0-9][\w.-]{2,}$", re.I)
+
+
+def _packages(text: str) -> set[str]:
+    """Имена пакетов из команд установки: без флагов, адресов и путей, версия после @ или == отбрасывается."""
+    names: set[str] = set()
+    for m in INSTALL_CMD.finditer(text):
+        for tok in m.group(1).split():
+            if tok.startswith("-") or "://" in tok or tok.startswith((".", "/", "~")):
+                continue
+            tok = re.split(r"(?<=.)@(?=[\d^~<>=*]|latest)|[=<>~!]=?", tok, maxsplit=1)[0].strip("'\"")
+            if PACKAGE_NAME.match(tok):
+                names.add(tok.lower())
+    return names
+
+
+def _link_packages(inc: Incident, ev, turn_results: list, user_texts: list[str]) -> None:
+    """Пакет, который установил агент, назван недоверенным текстом, а пользователь его не называл (подсказка вроде «поставь пакет X»)."""
+    if not any(x.code == "package-install" for x in inc.sinks):
+        return
+    for name in sorted(_packages(sinks.effective_text(ev.tool or "", ev.input))):
+        if any(name in u for u in user_texts):
+            continue
+        for res in reversed(turn_results):
+            pos = res.text.lower().find(name)
+            if pos >= 0:
+                note = f"пакет «{name}» назван в этом результате, а в сообщениях пользователя его нет"
+                inc.links.append(Link("package", res.idx, res.label(), note, snippet(res.text, pos, pos + len(name))))
+                break
+
+
 def _hits(text: str, judge) -> list:
     hits = injection.convincing(injection.find(text))
     if not hits and judge is not None:
@@ -234,7 +267,7 @@ def _confidence(inc: Incident) -> str:
     top = max(s.rank for s in inc.sinks)
     if top < sinks.SEVERITY["medium"]:
         return "weak"  # мелкие действия вроде обычного POST-запроса не поднимаем выше слабой связи
-    if "provenance" in kinds:
+    if "provenance" in kinds or {"package", "instruction"} <= kinds:  # имя пакета из страницы само по себе слабо: так выглядят и обычные инструкции установки
         return "strong"
     if "trifecta" in kinds and (any(a in kinds for a in ("instruction", "path")) or any(link.kind == "trifecta" and link.evidence == "секреты" for link in inc.links)):
         return "medium"
